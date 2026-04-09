@@ -49,7 +49,7 @@ psql -U postgres
 Inside the `psql` shell, run these SQL commands:
 
 ```sql
-CREATE USER tennisbook WITH PASSWORD 'tennisbook123' SUPERUSER;
+CREATE USER tennisbook WITH PASSWORD 'tennisbook123' LOGIN SUPERUSER;
 CREATE DATABASE tennisbook OWNER tennisbook;
 \q
 ```
