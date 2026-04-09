@@ -1,0 +1,52 @@
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'http://localhost:5191/api',
+  headers: { 'Content-Type': 'application/json' },
+});
+
+export const playersApi = {
+  getAll: () => api.get('/players'),
+  getById: (id) => api.get(`/players/${id}`),
+  create: (data) => api.post('/players', data),
+  update: (id, data) => api.put(`/players/${id}`, data),
+  delete: (id) => api.delete(`/players/${id}`),
+  getByQr: (qrCode) => api.get(`/players/qr/${qrCode}`),
+  getQrImageUrl: (id) => `http://localhost:5191/api/players/${id}/qr-image`,
+};
+
+export const subscriptionsApi = {
+  getAll: () => api.get('/subscriptions'),
+  getById: (id) => api.get(`/subscriptions/${id}`),
+  getByPlayer: (playerId) => api.get(`/subscriptions/player/${playerId}`),
+  create: (data) => api.post('/subscriptions', data),
+  update: (id, data) => api.put(`/subscriptions/${id}`, data),
+};
+
+export const trainingsApi = {
+  getAll: () => api.get('/trainings'),
+  getById: (id) => api.get(`/trainings/${id}`),
+  create: (data) => api.post('/trainings', data),
+  update: (id, data) => api.put(`/trainings/${id}`, data),
+  delete: (id) => api.delete(`/trainings/${id}`),
+  checkIn: (sessionId, qrCode) => api.post(`/trainings/${sessionId}/check-in?qrCode=${qrCode}`),
+  getAttendances: (sessionId) => api.get(`/trainings/${sessionId}/attendances`),
+};
+
+export const tournamentsApi = {
+  getAll: () => api.get('/tournaments'),
+  getById: (id) => api.get(`/tournaments/${id}`),
+  create: (data) => api.post('/tournaments', data),
+  update: (id, data) => api.put(`/tournaments/${id}`, data),
+  delete: (id) => api.delete(`/tournaments/${id}`),
+  register: (data) => api.post('/tournaments/register', data),
+  getParticipants: (id) => api.get(`/tournaments/${id}/participants`),
+  updateResult: (participationId, data) => api.put(`/tournaments/participation/${participationId}`, data),
+};
+
+export const reportsApi = {
+  getPlayerReport: (playerId) => api.get(`/reports/player/${playerId}`),
+  getDashboard: () => api.get('/reports/dashboard'),
+};
+
+export default api;
