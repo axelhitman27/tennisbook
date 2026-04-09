@@ -5,9 +5,37 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+export const authApi = {
+  login: (data) => api.post('/auth/login', data),
+  register: (data) => api.post('/auth/register', data),
+};
+
 export const playersApi = {
   getAll: () => api.get('/players'),
   getById: (id) => api.get(`/players/${id}`),
+  getMe: () => api.get('/players/me'),
   create: (data) => api.post('/players', data),
   update: (id, data) => api.put(`/players/${id}`, data),
   delete: (id) => api.delete(`/players/${id}`),
@@ -47,6 +75,13 @@ export const tournamentsApi = {
 export const reportsApi = {
   getPlayerReport: (playerId) => api.get(`/reports/player/${playerId}`),
   getDashboard: () => api.get('/reports/dashboard'),
+};
+
+export const paymentsApi = {
+  create: (data) => api.post('/payments', data),
+  markPaid: (id) => api.put(`/payments/${id}/pay`),
+  getByPlayer: (playerId) => api.get(`/payments/player/${playerId}`),
+  getPending: () => api.get('/payments/pending'),
 };
 
 export default api;

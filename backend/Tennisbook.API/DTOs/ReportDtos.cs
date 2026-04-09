@@ -36,7 +36,9 @@ public record QrScanResultDto(
     string Message,
     int? PlayerId,
     string? PlayerName,
-    int? TrainingsRemaining
+    int? TrainingsRemaining,
+    bool RequiresPayment = false,
+    int? AttendanceId = null
 );
 
 public record DashboardDto(

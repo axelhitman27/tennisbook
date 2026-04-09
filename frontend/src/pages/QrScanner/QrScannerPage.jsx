@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { FiCamera, FiCheckCircle, FiXCircle } from 'react-icons/fi';
-import { trainingsApi } from '../../api/client';
+import { FiCamera, FiCheckCircle, FiXCircle, FiDollarSign } from 'react-icons/fi';
+import { trainingsApi, paymentsApi } from '../../api/client';
 import LoadingSpinner from '../../components/LoadingSpinner';
+import Modal from '../../components/Modal';
 
 export default function QrScannerPage() {
   const [sessions, setSessions] = useState([]);
@@ -10,6 +11,10 @@ export default function QrScannerPage() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentDesc, setPaymentDesc] = useState('');
+  const [processingPayment, setProcessingPayment] = useState(false);
 
   useEffect(() => {
     trainingsApi.getAll()
@@ -28,14 +33,50 @@ export default function QrScannerPage() {
     }
     setScanning(true);
     setResult(null);
+    setShowPayment(false);
     try {
       const res = await trainingsApi.checkIn(selectedSessionId, manualQrCode.trim());
       setResult(res.data);
+      if (res.data.requiresPayment) {
+        setShowPayment(true);
+        setPaymentAmount('');
+        setPaymentDesc('Training session payment');
+      }
     } catch (err) {
       setResult(err.response?.data || { success: false, message: 'Check-in failed' });
     } finally {
       setScanning(false);
     }
+  };
+
+  const handlePayment = async () => {
+    if (!paymentAmount || !result?.playerId) return;
+    setProcessingPayment(true);
+    try {
+      const payment = await paymentsApi.create({
+        playerId: result.playerId,
+        trainingAttendanceId: result.attendanceId,
+        amount: Number(paymentAmount),
+        description: paymentDesc || 'Training session payment',
+      });
+      await paymentsApi.markPaid(payment.data.id);
+      setShowPayment(false);
+      setResult((prev) => ({
+        ...prev,
+        message: 'Check-in successful — payment recorded',
+        requiresPayment: false,
+      }));
+    } catch (err) {
+      alert('Failed to process payment');
+    } finally {
+      setProcessingPayment(false);
+    }
+  };
+
+  const resetScan = () => {
+    setManualQrCode('');
+    setResult(null);
+    setShowPayment(false);
   };
 
   if (loading) return <LoadingSpinner />;
@@ -70,18 +111,22 @@ export default function QrScannerPage() {
                 onChange={(e) => setManualQrCode(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleManualCheckIn()}
               />
-              <p className="text-sm text-muted mt-1">
-                Use a barcode scanner or enter the QR code manually
-              </p>
             </div>
 
-            <button
-              className="btn btn-primary btn-lg w-full"
-              onClick={handleManualCheckIn}
-              disabled={scanning || !selectedSessionId || !manualQrCode.trim()}
-            >
-              {scanning ? 'Checking In...' : 'Check In Player'}
-            </button>
+            <div className="form-actions" style={{ justifyContent: 'stretch', gap: '8px' }}>
+              <button
+                className="btn btn-primary btn-lg w-full"
+                onClick={handleManualCheckIn}
+                disabled={scanning || !selectedSessionId || !manualQrCode.trim()}
+              >
+                {scanning ? 'Checking In...' : 'Check In Player'}
+              </button>
+              {result && (
+                <button className="btn btn-outline btn-lg" onClick={resetScan}>
+                  Next Player
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -93,14 +138,62 @@ export default function QrScannerPage() {
             <h3>{result.success ? 'Check-In Successful!' : 'Check-In Failed'}</h3>
             <p className="result-message">{result.message}</p>
             {result.playerName && <p className="result-player">{result.playerName}</p>}
-            {result.trainingsRemaining !== null && result.trainingsRemaining !== undefined && (
+            {result.trainingsRemaining !== null && result.trainingsRemaining !== undefined && !result.requiresPayment && (
               <p className="result-remaining">
                 <strong>{result.trainingsRemaining}</strong> trainings remaining this month
               </p>
             )}
+            {result.requiresPayment && (
+              <div className="payment-prompt">
+                <FiDollarSign size={24} />
+                <p>This player needs to pay for this session</p>
+                <button className="btn btn-primary" onClick={() => setShowPayment(true)}>
+                  Record Payment
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
+
+      <Modal isOpen={showPayment} onClose={() => setShowPayment(false)} title="Record Session Payment">
+        <div className="form">
+          <div className="payment-header-info">
+            <p><strong>Player:</strong> {result?.playerName}</p>
+          </div>
+          <div className="form-group">
+            <label>Amount (EUR) *</label>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              value={paymentAmount}
+              onChange={(e) => setPaymentAmount(e.target.value)}
+              placeholder="e.g. 15.00"
+              autoFocus
+            />
+          </div>
+          <div className="form-group">
+            <label>Description</label>
+            <input
+              type="text"
+              value={paymentDesc}
+              onChange={(e) => setPaymentDesc(e.target.value)}
+              placeholder="Training session payment"
+            />
+          </div>
+          <div className="form-actions">
+            <button className="btn btn-outline" onClick={() => setShowPayment(false)}>Cancel</button>
+            <button
+              className="btn btn-primary"
+              onClick={handlePayment}
+              disabled={processingPayment || !paymentAmount}
+            >
+              {processingPayment ? 'Processing...' : `Confirm Payment €${paymentAmount || '0'}`}
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

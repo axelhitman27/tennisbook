@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Tennisbook.API.DTOs;
 using Tennisbook.API.Services;
@@ -6,6 +7,7 @@ namespace Tennisbook.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class SubscriptionsController : ControllerBase
 {
     private readonly SubscriptionService _subscriptionService;
@@ -14,6 +16,7 @@ public class SubscriptionsController : ControllerBase
         => _subscriptionService = subscriptionService;
 
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<List<SubscriptionDto>>> GetAll()
     {
         return await _subscriptionService.GetAllAsync();
@@ -33,6 +36,7 @@ public class SubscriptionsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<SubscriptionDto>> Create(CreateSubscriptionDto dto)
     {
         var sub = await _subscriptionService.CreateAsync(dto);
@@ -40,6 +44,7 @@ public class SubscriptionsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<SubscriptionDto>> Update(int id, UpdateSubscriptionDto dto)
     {
         var sub = await _subscriptionService.UpdateAsync(id, dto);

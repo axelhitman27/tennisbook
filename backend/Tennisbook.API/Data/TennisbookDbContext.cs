@@ -13,6 +13,8 @@ public class TennisbookDbContext : DbContext
     public DbSet<TrainingAttendance> TrainingAttendances => Set<TrainingAttendance>();
     public DbSet<Tournament> Tournaments => Set<Tournament>();
     public DbSet<TournamentParticipation> TournamentParticipations => Set<TournamentParticipation>();
+    public DbSet<User> Users => Set<User>();
+    public DbSet<Payment> Payments => Set<Payment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -22,6 +24,15 @@ public class TennisbookDbContext : DbContext
         {
             e.HasIndex(p => p.Email).IsUnique();
             e.HasIndex(p => p.QrCode).IsUnique();
+        });
+
+        modelBuilder.Entity<User>(e =>
+        {
+            e.HasIndex(u => u.Email).IsUnique();
+            e.HasOne(u => u.Player)
+                .WithOne(p => p.User)
+                .HasForeignKey<User>(u => u.PlayerId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<Subscription>(e =>
@@ -65,6 +76,21 @@ public class TennisbookDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             e.HasIndex(tp => new { tp.PlayerId, tp.TournamentId }).IsUnique();
+        });
+
+        modelBuilder.Entity<Payment>(e =>
+        {
+            e.HasOne(p => p.Player)
+                .WithMany(pl => pl.Payments)
+                .HasForeignKey(p => p.PlayerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(p => p.TrainingAttendance)
+                .WithMany()
+                .HasForeignKey(p => p.TrainingAttendanceId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            e.Property(p => p.Amount).HasPrecision(10, 2);
         });
     }
 }

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Tennisbook.API.DTOs;
 using Tennisbook.API.Services;
@@ -6,6 +7,7 @@ namespace Tennisbook.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class TrainingsController : ControllerBase
 {
     private readonly TrainingService _trainingService;
@@ -27,6 +29,7 @@ public class TrainingsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<TrainingSessionDto>> Create(CreateTrainingSessionDto dto)
     {
         var session = await _trainingService.CreateAsync(dto);
@@ -34,6 +37,7 @@ public class TrainingsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<TrainingSessionDto>> Update(int id, UpdateTrainingSessionDto dto)
     {
         var session = await _trainingService.UpdateAsync(id, dto);
@@ -41,12 +45,14 @@ public class TrainingsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         return await _trainingService.DeleteAsync(id) ? NoContent() : NotFound();
     }
 
     [HttpPost("{id}/check-in")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<QrScanResultDto>> CheckIn(int id, [FromQuery] string qrCode)
     {
         var result = await _trainingService.CheckInByQrAsync(qrCode, id);

@@ -96,23 +96,24 @@ public class TrainingService
             return new QrScanResultDto(false, "Player already checked in for this session",
                 player.Id, $"{player.FirstName} {player.LastName}", null);
 
-        var activeSub = player.Subscriptions.FirstOrDefault(s => s.IsActive);
-        if (activeSub == null)
-            return new QrScanResultDto(false, "No active subscription",
-                player.Id, $"{player.FirstName} {player.LastName}", 0);
-
-        if (activeSub.TrainingsRemaining <= 0)
-            return new QrScanResultDto(false, "No trainings remaining this month",
-                player.Id, $"{player.FirstName} {player.LastName}", 0);
-
         var attendance = new TrainingAttendance
         {
             PlayerId = player.Id,
             TrainingSessionId = trainingSessionId,
             WasQrScanned = true
         };
-
         _db.TrainingAttendances.Add(attendance);
+
+        var activeSub = player.Subscriptions.FirstOrDefault(s => s.IsActive);
+
+        if (activeSub == null || activeSub.TrainingsRemaining <= 0)
+        {
+            await _db.SaveChangesAsync();
+            return new QrScanResultDto(true, "Check-in successful — payment required",
+                player.Id, $"{player.FirstName} {player.LastName}", 0,
+                RequiresPayment: true, AttendanceId: attendance.Id);
+        }
+
         activeSub.TrainingsUsedThisMonth++;
         await _db.SaveChangesAsync();
 

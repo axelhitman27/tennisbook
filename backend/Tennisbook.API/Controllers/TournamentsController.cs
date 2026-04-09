@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Tennisbook.API.DTOs;
 using Tennisbook.API.Services;
@@ -6,6 +7,7 @@ namespace Tennisbook.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class TournamentsController : ControllerBase
 {
     private readonly TournamentService _tournamentService;
@@ -27,6 +29,7 @@ public class TournamentsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<TournamentDto>> Create(CreateTournamentDto dto)
     {
         var tournament = await _tournamentService.CreateAsync(dto);
@@ -34,6 +37,7 @@ public class TournamentsController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<TournamentDto>> Update(int id, UpdateTournamentDto dto)
     {
         var tournament = await _tournamentService.UpdateAsync(id, dto);
@@ -41,16 +45,18 @@ public class TournamentsController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
     {
         return await _tournamentService.DeleteAsync(id) ? NoContent() : NotFound();
     }
 
     [HttpPost("register")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<TournamentParticipationDto>> RegisterPlayer(RegisterTournamentDto dto)
     {
         var result = await _tournamentService.RegisterPlayerAsync(dto);
-        return result == null ? BadRequest("Registration failed. Player or tournament not found, or already registered.") : Ok(result);
+        return result == null ? BadRequest("Registration failed.") : Ok(result);
     }
 
     [HttpGet("{id}/participants")]
@@ -60,6 +66,7 @@ public class TournamentsController : ControllerBase
     }
 
     [HttpPut("participation/{participationId}")]
+    [Authorize(Roles = "Admin")]
     public async Task<ActionResult<TournamentParticipationDto>> UpdateResult(int participationId, UpdateParticipationResultDto dto)
     {
         var result = await _tournamentService.UpdateResultAsync(participationId, dto);
