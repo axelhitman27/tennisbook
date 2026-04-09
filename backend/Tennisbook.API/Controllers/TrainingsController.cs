@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Tennisbook.API.DTOs;
@@ -63,5 +64,53 @@ public class TrainingsController : ControllerBase
     public async Task<ActionResult<List<TrainingAttendanceDto>>> GetAttendances(int id)
     {
         return await _trainingService.GetAttendancesAsync(id);
+    }
+
+    // --- Enrollment ---
+
+    [HttpPost("{id}/enroll")]
+    public async Task<ActionResult<TrainingEnrollmentDto>> Enroll(int id)
+    {
+        var playerIdClaim = User.FindFirst("PlayerId")?.Value;
+        var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+        if (playerIdClaim == null && role != "Admin")
+            return Forbid();
+
+        var playerId = int.Parse(playerIdClaim!);
+        var result = await _trainingService.EnrollAsync(new EnrollPlayerDto(playerId, id));
+        return result == null
+            ? BadRequest(new { message = "Enrollment failed. Session full or already enrolled." })
+            : Ok(result);
+    }
+
+    [HttpPost("{id}/enroll-player")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<TrainingEnrollmentDto>> EnrollPlayer(int id, [FromBody] EnrollPlayerDto dto)
+    {
+        var result = await _trainingService.EnrollAsync(new EnrollPlayerDto(dto.PlayerId, id));
+        return result == null
+            ? BadRequest(new { message = "Enrollment failed. Session full or already enrolled." })
+            : Ok(result);
+    }
+
+    [HttpDelete("enrollment/{enrollmentId}")]
+    public async Task<IActionResult> Unenroll(int enrollmentId)
+    {
+        return await _trainingService.UnenrollAsync(enrollmentId) ? NoContent() : NotFound();
+    }
+
+    [HttpGet("{id}/enrollments")]
+    public async Task<ActionResult<List<TrainingEnrollmentDto>>> GetEnrollments(int id)
+    {
+        return await _trainingService.GetEnrollmentsAsync(id);
+    }
+
+    [HttpGet("my-enrollments")]
+    public async Task<ActionResult<List<TrainingEnrollmentDto>>> GetMyEnrollments()
+    {
+        var playerIdClaim = User.FindFirst("PlayerId")?.Value;
+        if (playerIdClaim == null) return Forbid();
+        return await _trainingService.GetPlayerEnrollmentsAsync(int.Parse(playerIdClaim));
     }
 }

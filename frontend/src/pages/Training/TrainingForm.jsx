@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { trainingsApi } from '../../api/client';
 
+const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
 export default function TrainingForm({ session, onSuccess }) {
   const [form, setForm] = useState({
     title: session?.title || '',
@@ -12,6 +14,9 @@ export default function TrainingForm({ session, onSuccess }) {
     courtName: session?.courtName || '',
     trainerName: session?.trainerName || '',
     maxParticipants: session?.maxParticipants || 10,
+    isRecurring: session?.isRecurring || false,
+    recurrenceDay: session?.recurrenceDay || '',
+    recurrenceTime: session?.recurrenceTime || '',
   });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -25,6 +30,10 @@ export default function TrainingForm({ session, onSuccess }) {
         ...form,
         durationMinutes: Number(form.durationMinutes),
         maxParticipants: Number(form.maxParticipants),
+        recurrenceDay: form.isRecurring && form.recurrenceDay !== ''
+          ? Number(form.recurrenceDay)
+          : null,
+        recurrenceTime: form.isRecurring ? form.recurrenceTime || null : null,
       };
       if (session) {
         await trainingsApi.update(session.id, payload);
@@ -40,7 +49,8 @@ export default function TrainingForm({ session, onSuccess }) {
   };
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value, type, checked } = e.target;
+    setForm({ ...form, [name]: type === 'checkbox' ? checked : value });
   };
 
   return (
@@ -83,6 +93,31 @@ export default function TrainingForm({ session, onSuccess }) {
         <label>Max Participants</label>
         <input name="maxParticipants" type="number" min="1" value={form.maxParticipants} onChange={handleChange} />
       </div>
+
+      <div className="form-group checkbox-group">
+        <label className="checkbox-label">
+          <input name="isRecurring" type="checkbox" checked={form.isRecurring} onChange={handleChange} />
+          <span>Recurring weekly session</span>
+        </label>
+      </div>
+
+      {form.isRecurring && (
+        <div className="form-row recurring-fields">
+          <div className="form-group">
+            <label>Day of Week *</label>
+            <select name="recurrenceDay" value={form.recurrenceDay} onChange={handleChange} required>
+              <option value="">Select day...</option>
+              {DAYS.map((day, i) => (
+                <option key={day} value={i}>{day}</option>
+              ))}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Time *</label>
+            <input name="recurrenceTime" type="time" value={form.recurrenceTime} onChange={handleChange} required />
+          </div>
+        </div>
+      )}
 
       <div className="form-actions">
         <button type="submit" className="btn btn-primary" disabled={saving}>

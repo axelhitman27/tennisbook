@@ -108,13 +108,15 @@ public class ReportService
 
         var upcomingTrainingsList = await _db.TrainingSessions
             .Include(t => t.Attendances)
+            .Include(t => t.Enrollments)
             .Where(t => t.ScheduledAt > now)
             .OrderBy(t => t.ScheduledAt)
             .Take(5)
             .Select(t => new TrainingSessionDto(
                 t.Id, t.Title, t.Description, t.ScheduledAt, t.DurationMinutes,
                 t.CourtName, t.TrainerName, t.MaxParticipants, t.Attendances.Count,
-                t.Status.ToString(), t.CreatedAt
+                t.Status.ToString(), t.IsRecurring, t.RecurrenceDay != null ? t.RecurrenceDay.ToString() : null,
+                t.RecurrenceTime, t.Enrollments.Count(e => e.IsActive), t.CreatedAt
             ))
             .ToListAsync();
 

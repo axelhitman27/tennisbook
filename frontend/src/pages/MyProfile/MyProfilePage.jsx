@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import QRCode from 'react-qr-code';
-import { FiCalendar, FiAward, FiCreditCard } from 'react-icons/fi';
-import { playersApi, reportsApi, paymentsApi } from '../../api/client';
+import { FiCalendar, FiAward, FiCreditCard, FiRepeat } from 'react-icons/fi';
+import { playersApi, reportsApi, paymentsApi, trainingsApi } from '../../api/client';
 import { useAuth } from '../../context/AuthContext';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import { format } from 'date-fns';
@@ -11,19 +11,22 @@ export default function MyProfilePage() {
   const [player, setPlayer] = useState(null);
   const [report, setReport] = useState(null);
   const [payments, setPayments] = useState([]);
+  const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [pRes, rRes, pmRes] = await Promise.all([
+        const [pRes, rRes, pmRes, eRes] = await Promise.all([
           playersApi.getMe(),
           reportsApi.getPlayerReport(user.playerId),
           paymentsApi.getByPlayer(user.playerId),
+          trainingsApi.getMyEnrollments(),
         ]);
         setPlayer(pRes.data);
         setReport(rRes.data);
         setPayments(pmRes.data);
+        setEnrollments(eRes.data);
       } catch (err) {
         console.error(err);
       } finally {
@@ -101,6 +104,26 @@ export default function MyProfilePage() {
           </div>
         )}
       </div>
+
+      {enrollments.length > 0 && (
+        <div className="card mt-4">
+          <div className="card-header"><h3><FiRepeat /> My Weekly Schedule</h3></div>
+          <div className="card-body">
+            <div className="schedule-grid">
+              {enrollments.map((e) => (
+                <div key={e.id} className="schedule-item">
+                  <div className="schedule-day">{e.recurrenceDay || 'One-time'}</div>
+                  <div className="schedule-details">
+                    <strong>{e.trainingTitle}</strong>
+                    {e.recurrenceTime && <span className="schedule-time">{e.recurrenceTime}</span>}
+                    {e.courtName && <span className="text-muted text-sm"> — {e.courtName}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {report && (
         <>

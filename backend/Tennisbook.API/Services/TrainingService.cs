@@ -15,6 +15,7 @@ public class TrainingService
     {
         return await _db.TrainingSessions
             .Include(t => t.Attendances)
+            .Include(t => t.Enrollments)
             .Select(t => MapToDto(t))
             .ToListAsync();
     }
@@ -23,6 +24,7 @@ public class TrainingService
     {
         var session = await _db.TrainingSessions
             .Include(t => t.Attendances)
+            .Include(t => t.Enrollments)
             .FirstOrDefaultAsync(t => t.Id == id);
         return session == null ? null : MapToDto(session);
     }
@@ -37,7 +39,10 @@ public class TrainingService
             DurationMinutes = dto.DurationMinutes,
             CourtName = dto.CourtName,
             TrainerName = dto.TrainerName,
-            MaxParticipants = dto.MaxParticipants
+            MaxParticipants = dto.MaxParticipants,
+            IsRecurring = dto.IsRecurring,
+            RecurrenceDay = dto.RecurrenceDay,
+            RecurrenceTime = dto.RecurrenceTime
         };
 
         _db.TrainingSessions.Add(session);
@@ -49,6 +54,7 @@ public class TrainingService
     {
         var session = await _db.TrainingSessions
             .Include(t => t.Attendances)
+            .Include(t => t.Enrollments)
             .FirstOrDefaultAsync(t => t.Id == id);
 
         if (session == null) return null;
@@ -61,6 +67,9 @@ public class TrainingService
         if (dto.TrainerName != null) session.TrainerName = dto.TrainerName;
         if (dto.MaxParticipants.HasValue) session.MaxParticipants = dto.MaxParticipants.Value;
         if (dto.Status.HasValue) session.Status = dto.Status.Value;
+        if (dto.IsRecurring.HasValue) session.IsRecurring = dto.IsRecurring.Value;
+        if (dto.RecurrenceDay.HasValue) session.RecurrenceDay = dto.RecurrenceDay.Value;
+        if (dto.RecurrenceTime != null) session.RecurrenceTime = dto.RecurrenceTime;
 
         await _db.SaveChangesAsync();
         return MapToDto(session);
@@ -139,6 +148,88 @@ public class TrainingService
             .ToListAsync();
     }
 
+    // --- Enrollment ---
+
+    public async Task<TrainingEnrollmentDto?> EnrollAsync(EnrollPlayerDto dto)
+    {
+        var player = await _db.Players.FindAsync(dto.PlayerId);
+        if (player == null) return null;
+
+        var session = await _db.TrainingSessions.FindAsync(dto.TrainingSessionId);
+        if (session == null) return null;
+
+        var existing = await _db.TrainingEnrollments
+            .AnyAsync(e => e.PlayerId == dto.PlayerId && e.TrainingSessionId == dto.TrainingSessionId);
+        if (existing) return null;
+
+        var enrolledCount = await _db.TrainingEnrollments
+            .CountAsync(e => e.TrainingSessionId == dto.TrainingSessionId && e.IsActive);
+        if (enrolledCount >= session.MaxParticipants) return null;
+
+        var enrollment = new TrainingEnrollment
+        {
+            PlayerId = dto.PlayerId,
+            TrainingSessionId = dto.TrainingSessionId
+        };
+
+        _db.TrainingEnrollments.Add(enrollment);
+        await _db.SaveChangesAsync();
+
+        return MapEnrollmentToDto(enrollment, player, session);
+    }
+
+    public async Task<bool> UnenrollAsync(int enrollmentId)
+    {
+        var enrollment = await _db.TrainingEnrollments.FindAsync(enrollmentId);
+        if (enrollment == null) return false;
+
+        enrollment.IsActive = false;
+        await _db.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<List<TrainingEnrollmentDto>> GetEnrollmentsAsync(int trainingSessionId)
+    {
+        return await _db.TrainingEnrollments
+            .Include(e => e.Player)
+            .Include(e => e.TrainingSession)
+            .Where(e => e.TrainingSessionId == trainingSessionId && e.IsActive)
+            .Select(e => new TrainingEnrollmentDto(
+                e.Id,
+                e.PlayerId,
+                e.Player.FirstName + " " + e.Player.LastName,
+                e.TrainingSessionId,
+                e.TrainingSession.Title,
+                e.TrainingSession.RecurrenceDay != null ? e.TrainingSession.RecurrenceDay.ToString() : null,
+                e.TrainingSession.RecurrenceTime,
+                e.TrainingSession.CourtName,
+                e.IsActive,
+                e.EnrolledAt
+            ))
+            .ToListAsync();
+    }
+
+    public async Task<List<TrainingEnrollmentDto>> GetPlayerEnrollmentsAsync(int playerId)
+    {
+        return await _db.TrainingEnrollments
+            .Include(e => e.Player)
+            .Include(e => e.TrainingSession)
+            .Where(e => e.PlayerId == playerId && e.IsActive)
+            .Select(e => new TrainingEnrollmentDto(
+                e.Id,
+                e.PlayerId,
+                e.Player.FirstName + " " + e.Player.LastName,
+                e.TrainingSessionId,
+                e.TrainingSession.Title,
+                e.TrainingSession.RecurrenceDay != null ? e.TrainingSession.RecurrenceDay.ToString() : null,
+                e.TrainingSession.RecurrenceTime,
+                e.TrainingSession.CourtName,
+                e.IsActive,
+                e.EnrolledAt
+            ))
+            .ToListAsync();
+    }
+
     private static TrainingSessionDto MapToDto(TrainingSession t) => new(
         t.Id,
         t.Title,
@@ -150,6 +241,23 @@ public class TrainingService
         t.MaxParticipants,
         t.Attendances.Count,
         t.Status.ToString(),
+        t.IsRecurring,
+        t.RecurrenceDay?.ToString(),
+        t.RecurrenceTime,
+        t.Enrollments.Count(e => e.IsActive),
         t.CreatedAt
+    );
+
+    private static TrainingEnrollmentDto MapEnrollmentToDto(TrainingEnrollment e, Player p, TrainingSession s) => new(
+        e.Id,
+        p.Id,
+        $"{p.FirstName} {p.LastName}",
+        s.Id,
+        s.Title,
+        s.RecurrenceDay?.ToString(),
+        s.RecurrenceTime,
+        s.CourtName,
+        e.IsActive,
+        e.EnrolledAt
     );
 }

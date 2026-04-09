@@ -34,5 +34,6 @@ public class Player
     public ICollection<TrainingAttendance> TrainingAttendances { get; set; } = new List<TrainingAttendance>();
     public ICollection<TournamentParticipation> TournamentParticipations { get; set; } = new List<TournamentParticipation>();
     public ICollection<Payment> Payments { get; set; } = new List<Payment>();
+    public ICollection<TrainingEnrollment> TrainingEnrollments { get; set; } = new List<TrainingEnrollment>();
     public User? User { get; set; }
 }

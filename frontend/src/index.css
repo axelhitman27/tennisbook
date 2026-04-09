@@ -788,6 +788,82 @@ body {
   margin-bottom: 8px;
 }
 
+/* Recurring badge */
+.badge-recurring {
+  background: #dbeafe;
+  color: #1e40af;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Checkbox group */
+.checkbox-group { flex-direction: row !important; }
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--primary);
+}
+
+.recurring-fields {
+  padding: 16px;
+  background: var(--bg);
+  border-radius: var(--radius);
+  border: 1px dashed var(--border);
+}
+
+/* Weekly Schedule */
+.schedule-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.schedule-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: var(--bg);
+  border-radius: var(--radius);
+  border-left: 4px solid var(--primary);
+}
+
+.schedule-day {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--primary);
+  min-width: 80px;
+  text-transform: uppercase;
+}
+
+.schedule-details {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.schedule-time {
+  font-weight: 600;
+  color: var(--text);
+  background: white;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .profile-layout {

@@ -59,6 +59,11 @@ export const trainingsApi = {
   delete: (id) => api.delete(`/trainings/${id}`),
   checkIn: (sessionId, qrCode) => api.post(`/trainings/${sessionId}/check-in?qrCode=${qrCode}`),
   getAttendances: (sessionId) => api.get(`/trainings/${sessionId}/attendances`),
+  enroll: (sessionId) => api.post(`/trainings/${sessionId}/enroll`),
+  enrollPlayer: (sessionId, playerId) => api.post(`/trainings/${sessionId}/enroll-player`, { playerId, trainingSessionId: sessionId }),
+  unenroll: (enrollmentId) => api.delete(`/trainings/enrollment/${enrollmentId}`),
+  getEnrollments: (sessionId) => api.get(`/trainings/${sessionId}/enrollments`),
+  getMyEnrollments: () => api.get('/trainings/my-enrollments'),
 };
 
 export const tournamentsApi = {

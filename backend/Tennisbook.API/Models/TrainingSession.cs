@@ -24,9 +24,16 @@ public class TrainingSession
 
     public TrainingStatus Status { get; set; } = TrainingStatus.Scheduled;
 
+    public bool IsRecurring { get; set; }
+    public DayOfWeek? RecurrenceDay { get; set; }
+
+    [MaxLength(5)]
+    public string? RecurrenceTime { get; set; } // "HH:mm" format
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<TrainingAttendance> Attendances { get; set; } = new List<TrainingAttendance>();
+    public ICollection<TrainingEnrollment> Enrollments { get; set; } = new List<TrainingEnrollment>();
 }
 
 public enum TrainingStatus

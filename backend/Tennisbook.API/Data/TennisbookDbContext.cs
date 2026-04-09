@@ -15,6 +15,7 @@ public class TennisbookDbContext : DbContext
     public DbSet<TournamentParticipation> TournamentParticipations => Set<TournamentParticipation>();
     public DbSet<User> Users => Set<User>();
     public DbSet<Payment> Payments => Set<Payment>();
+    public DbSet<TrainingEnrollment> TrainingEnrollments => Set<TrainingEnrollment>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -76,6 +77,21 @@ public class TennisbookDbContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             e.HasIndex(tp => new { tp.PlayerId, tp.TournamentId }).IsUnique();
+        });
+
+        modelBuilder.Entity<TrainingEnrollment>(e =>
+        {
+            e.HasOne(te => te.Player)
+                .WithMany(p => p.TrainingEnrollments)
+                .HasForeignKey(te => te.PlayerId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(te => te.TrainingSession)
+                .WithMany(ts => ts.Enrollments)
+                .HasForeignKey(te => te.TrainingSessionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasIndex(te => new { te.PlayerId, te.TrainingSessionId }).IsUnique();
         });
 
         modelBuilder.Entity<Payment>(e =>
