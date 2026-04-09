@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Tennisbook.API.Models;
 
 namespace Tennisbook.API.Data;
@@ -13,6 +14,35 @@ public class TennisbookDbContext : DbContext
     public DbSet<TrainingAttendance> TrainingAttendances => Set<TrainingAttendance>();
     public DbSet<Tournament> Tournaments => Set<Tournament>();
     public DbSet<TournamentParticipation> TournamentParticipations => Set<TournamentParticipation>();
+
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        ConvertDateTimesToUtc();
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
+    public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+    {
+        ConvertDateTimesToUtc();
+        return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+    }
+
+    private void ConvertDateTimesToUtc()
+    {
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.State is EntityState.Added or EntityState.Modified)
+            {
+                foreach (var prop in entry.Properties)
+                {
+                    if (prop.CurrentValue is DateTime dt && dt.Kind != DateTimeKind.Utc)
+                    {
+                        prop.CurrentValue = DateTime.SpecifyKind(dt, DateTimeKind.Utc);
+                    }
+                }
+            }
+        }
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
