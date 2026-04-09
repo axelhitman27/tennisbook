@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Tennisbook.API.Data;
 using Tennisbook.API.Services;
 
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
