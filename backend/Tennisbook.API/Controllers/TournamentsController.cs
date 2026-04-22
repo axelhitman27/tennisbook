@@ -17,59 +17,70 @@ public class TournamentsController : ControllerBase
 
     [HttpGet]
     public async Task<ActionResult<List<TournamentDto>>> GetAll()
-    {
-        return await _tournamentService.GetAllAsync();
-    }
+        => await _tournamentService.GetAllAsync();
 
     [HttpGet("{id}")]
     public async Task<ActionResult<TournamentDto>> GetById(int id)
     {
-        var tournament = await _tournamentService.GetByIdAsync(id);
-        return tournament == null ? NotFound() : Ok(tournament);
+        var t = await _tournamentService.GetByIdAsync(id);
+        return t == null ? NotFound() : Ok(t);
     }
 
     [HttpPost]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<TournamentDto>> Create(CreateTournamentDto dto)
     {
-        var tournament = await _tournamentService.CreateAsync(dto);
-        return CreatedAtAction(nameof(GetById), new { id = tournament.Id }, tournament);
+        var t = await _tournamentService.CreateAsync(dto);
+        return CreatedAtAction(nameof(GetById), new { id = t.Id }, t);
     }
 
     [HttpPut("{id}")]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<TournamentDto>> Update(int id, UpdateTournamentDto dto)
     {
-        var tournament = await _tournamentService.UpdateAsync(id, dto);
-        return tournament == null ? NotFound() : Ok(tournament);
+        var t = await _tournamentService.UpdateAsync(id, dto);
+        return t == null ? NotFound() : Ok(t);
     }
 
     [HttpDelete("{id}")]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Delete(int id)
-    {
-        return await _tournamentService.DeleteAsync(id) ? NoContent() : NotFound();
-    }
+        => await _tournamentService.DeleteAsync(id) ? NoContent() : NotFound();
 
     [HttpPost("register")]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<TournamentParticipationDto>> RegisterPlayer(RegisterTournamentDto dto)
     {
-        var result = await _tournamentService.RegisterPlayerAsync(dto);
-        return result == null ? BadRequest("Registration failed.") : Ok(result);
+        var r = await _tournamentService.RegisterPlayerAsync(dto);
+        return r == null ? BadRequest("Registration failed.") : Ok(r);
     }
 
     [HttpGet("{id}/participants")]
     public async Task<ActionResult<List<TournamentParticipationDto>>> GetParticipants(int id)
-    {
-        return await _tournamentService.GetParticipantsAsync(id);
-    }
+        => await _tournamentService.GetParticipantsAsync(id);
 
     [HttpPut("participation/{participationId}")]
     [Authorize(Roles = "Admin")]
     public async Task<ActionResult<TournamentParticipationDto>> UpdateResult(int participationId, UpdateParticipationResultDto dto)
     {
-        var result = await _tournamentService.UpdateResultAsync(participationId, dto);
-        return result == null ? NotFound() : Ok(result);
+        var r = await _tournamentService.UpdateResultAsync(participationId, dto);
+        return r == null ? NotFound() : Ok(r);
+    }
+
+    [HttpPost("{id}/generate-draw")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<List<TournamentMatchDto>>> GenerateDraw(int id)
+        => await _tournamentService.GenerateDrawAsync(id);
+
+    [HttpGet("{id}/matches")]
+    public async Task<ActionResult<List<TournamentMatchDto>>> GetMatches(int id)
+        => await _tournamentService.GetMatchesAsync(id);
+
+    [HttpPut("matches/{matchId}/score")]
+    [Authorize(Roles = "Admin")]
+    public async Task<ActionResult<TournamentMatchDto>> UpdateMatchScore(int matchId, UpdateMatchScoreDto dto)
+    {
+        var m = await _tournamentService.UpdateMatchScoreAsync(matchId, dto);
+        return m == null ? NotFound() : Ok(m);
     }
 }

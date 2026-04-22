@@ -128,6 +128,7 @@ public class ReportService
             .Select(t => new TournamentDto(
                 t.Id, t.Name, t.Description, t.Location, t.StartDate, t.EndDate,
                 t.MaxParticipants, t.Participations.Count, t.Category,
+                t.Format, t.Surface, t.SetsToWin, t.DrawGenerated,
                 t.Status.ToString(), t.CreatedAt
             ))
             .ToListAsync();

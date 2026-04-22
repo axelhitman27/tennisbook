@@ -75,6 +75,9 @@ export const tournamentsApi = {
   register: (data) => api.post('/tournaments/register', data),
   getParticipants: (id) => api.get(`/tournaments/${id}/participants`),
   updateResult: (participationId, data) => api.put(`/tournaments/participation/${participationId}`, data),
+  generateDraw: (id) => api.post(`/tournaments/${id}/generate-draw`),
+  getMatches: (id) => api.get(`/tournaments/${id}/matches`),
+  updateMatchScore: (matchId, data) => api.put(`/tournaments/matches/${matchId}/score`, data),
 };
 
 export const reportsApi = {
